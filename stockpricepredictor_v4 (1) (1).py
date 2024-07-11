@@ -15,10 +15,8 @@ import streamlit as st
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
 from keras.layers import Dense, LSTM, Dropout
-import matplotlib.pyplot as plt
+import altair as alt
 from datetime import date
-
-plt.style.use('fivethirtyeight')
 
 # Streamlit app
 st.title('Stock Price Prediction')
@@ -88,8 +86,6 @@ if st.button('Predict'):
 
     # Create a new DataFrame for the prediction
     new_df = data.copy()
-    scaler = MinMaxScaler(feature_range=(0, 1))
-    scaled_data = scaler.fit_transform(new_df)
 
     def predict_next_day(data, model, scaler):
         last_60_days = data[-60:]
@@ -112,15 +108,37 @@ if st.button('Predict'):
         new_df.loc[date] = [next_pred]
         future_predictions.append(next_pred)
 
-    # Plot the results
-    plt.figure(figsize=(14, 7))
-    plt.plot(new_df.index, new_df['Close'], label='Historical Data')
-    plt.plot(future_dates, future_predictions, label='Predicted Prices', linestyle='--', color='red')
-    plt.title(f'Stock Prices Prediction for {stock_ticker}')
-    plt.xlabel('Date')
-    plt.ylabel('Stock Price (USD)')
-    plt.legend()
-    st.pyplot(plt)
+    # Plot the results using Altair
+    historical_data = pd.DataFrame({
+        'Date': new_df.index,
+        'Close': new_df['Close']
+    })
+
+    historical_chart = alt.Chart(historical_data).mark_line().encode(
+        x='Date:T',
+        y='Close:Q',
+        color=alt.value('blue'),
+        tooltip=['Date', 'Close']
+    ).properties(
+        title=f'Stock Prices Prediction for {stock_ticker}',
+        width=800,
+        height=400
+    )
+
+    future_data = pd.DataFrame({
+        'Date': future_dates,
+        'Predicted Prices': future_predictions
+    })
+
+    future_chart = alt.Chart(future_data).mark_line(color='red', strokeDash=[5, 5]).encode(
+        x='Date:T',
+        y='Predicted Prices:Q',
+        tooltip=['Date', alt.Tooltip('Predicted Prices:Q', format='.2f')],
+    )
+
+    combined_chart = historical_chart + future_chart
+
+    st.altair_chart(combined_chart, use_container_width=True)
 
     # Display the final prediction
     final_prediction = future_predictions[-1]

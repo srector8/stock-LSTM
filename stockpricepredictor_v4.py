@@ -14,7 +14,7 @@ import yfinance as yf
 import streamlit as st
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
-from keras.layers import Dense, LSTM
+from keras.layers import Dense, LSTM, Dropout
 import matplotlib.pyplot as plt
 from datetime import date
 
@@ -60,7 +60,9 @@ if st.button('Predict'):
     # Build the LSTM model
     model = Sequential()
     model.add(LSTM(50, return_sequences=True, input_shape=(x_train.shape[1], 1)))
+    model.add(Dropout(0.2))  # Add dropout layer to prevent overfitting
     model.add(LSTM(50, return_sequences=False))
+    model.add(Dropout(0.2))  # Add dropout layer to prevent overfitting
     model.add(Dense(25))
     model.add(Dense(1))
 
@@ -68,7 +70,7 @@ if st.button('Predict'):
     model.compile(optimizer='adam', loss='mean_squared_error')
 
     # Train the model
-    model.fit(x_train, y_train, batch_size=1, epochs=1)
+    model.fit(x_train, y_train, batch_size=1, epochs=10)  # Increase the number of epochs
 
     # Create the testing data set
     test_data = scaled_data[training_data_len - 60:, :]
